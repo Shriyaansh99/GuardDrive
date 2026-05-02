@@ -1,11 +1,10 @@
-const CACHE_NAME = 'guarddrive-v2';
+const CACHE_NAME = 'guarddrive-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  'https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap',
-  'https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js',
-  'https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js',
-  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js'
+  '/GuardDrive/',
+  '/GuardDrive/index.html',
+  '/GuardDrive/manifest.json',
+  '/GuardDrive/icon-192.png',
+  '/GuardDrive/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
