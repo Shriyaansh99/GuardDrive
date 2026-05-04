@@ -322,8 +322,13 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
       </div>
       <div class="card">
         <div class="ctitle">Emergency Contact</div>
-        <div class="ssb" style="margin-bottom:10px">When eyes are closed 10+ seconds, a fullscreen alert appears and your phone dials this number automatically using your own SIM.</div>
+        <div class="ssb" style="margin-bottom:10px">When eyes are closed for the SOS duration, your phone automatically calls this number using your own SIM — no tap needed.</div>
         <div class="srow"><div><div class="slb">Enable Emergency Call</div><div class="ssb">Auto-dial on drowsiness</div></div><div class="tog" id="tEmCall" onclick="this.classList.toggle('on');saveSettings()"></div></div>
+        <div class="srow">
+          <div><div class="slb">SOS Call Timer</div><div class="ssb">Eyes closed this long → auto call fires</div></div>
+          <div class="sval" id="sosTimerD">10s</div>
+        </div>
+        <input type="range" id="sosTimer" min="5" max="30" value="10" step="1" oninput="setSetting(this,'sosTimer')"/>
         <div style="margin-top:10px">
           <div class="shdr">Contact Name</div>
           <input type="text" id="emName" placeholder="e.g. Dad / Mom" oninput="saveSettings()"/>
@@ -402,7 +407,7 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
         <div class="ctitle">Help & Guide</div>
         <div class="hitem"><div class="hnum">1</div><div><div class="htit">Mount your phone on the dashboard</div><div class="hbod">Use a phone mount so the front camera faces your face directly. Both eyes must be clearly visible. Avoid dark environments or harsh backlighting.</div></div></div>
         <div class="hitem"><div class="hnum">2</div><div><div class="htit">Calibrate EAR for your face</div><div class="hbod">If you get too many false alarms, increase the EAR threshold in Settings. If drowsiness isn't caught, lower it. Default 0.40 suits most faces.</div></div></div>
-        <div class="hitem"><div class="hnum">3</div><div><div class="htit">Emergency call — no setup needed</div><div class="hbod">Go to Settings → Emergency Contact. Enter a name and phone number and toggle it on. When eyes stay closed for 10+ seconds the app opens your phone's dialer with the number ready — tap Call. Uses your own SIM, completely free.</div></div></div>
+        <div class="hitem"><div class="hnum">3</div><div><div class="htit">Emergency call — automatic, no tap needed</div><div class="hbod">Go to Settings → Emergency Contact. Enter a name and number, set the SOS Call Timer (separate from the alarm timer), and toggle it on. When eyes stay closed past the SOS duration, your phone automatically calls — no tap required. Uses your own SIM, completely free.</div></div></div>
         <div class="hitem"><div class="hnum">4</div><div><div class="htit">GPS speed tracking</div><div class="hbod">Allow location permission when prompted. The app reads your real GPS speed. Set your custom speed limit in Settings to log exceeded events.</div></div></div>
         <div class="hitem"><div class="hnum">5</div><div><div class="htit">Install as an app</div><div class="hbod">In Chrome: tap the three-dot menu → "Add to Home Screen". On Safari (iPhone): tap Share → "Add to Home Screen". Works fully offline once installed.</div></div></div>
       </div>
@@ -453,6 +458,7 @@ const S = {
   emCallEnabled:   false,
   emName:          '',
   emPhone:         '',
+  sosSecs:         10,
   camera:          'user',
 };
 
@@ -622,71 +628,33 @@ function flashScreen(){
 }
 
 // ══════════════════════════════════════════
-//  EMERGENCY CALL — Direct phone dialer
-//  Uses tel: protocol → opens your phone's
-//  own dialer with the number pre-filled.
-//  Your phone, your SIM, your number.
-//  No Twilio, no API, no cost.
+//  EMERGENCY CALL — instant auto-call
+//  Directly fires tel: — opens dialer and
+//  on Android calls automatically.
+//  Your phone, your SIM, no tap needed.
 // ══════════════════════════════════════════
 function triggerEmergencyCall(reason){
   if(!S.emCallEnabled || !S.emPhone){
-    addLog('EMERGENCY_SKIPPED', `Call not triggered — no number set`);
+    addLog('EMERGENCY_SKIPPED', `No number set`);
     return;
   }
-
   const number = S.emPhone.replace(/\s/g,'');
-  addLog('EMERGENCY_CALL', `Calling ${number} — ${reason}`);
+  addLog('EMERGENCY_CALL', `Auto-calling ${S.emName||number} — ${reason}`);
 
-  // Show fullscreen alert with call button
-  const overlay = document.createElement('div');
-  overlay.id = 'emergencyOverlay';
-  overlay.style.cssText = `
-    position:fixed;inset:0;z-index:99999;
-    background:rgba(10,12,15,0.97);
-    display:flex;flex-direction:column;
-    align-items:center;justify-content:center;
-    gap:20px;padding:30px;text-align:center;
-  `;
-  overlay.innerHTML = `
-    <div style="width:80px;height:80px;border-radius:50%;background:#e0303022;border:2px solid #e03030;
-      display:flex;align-items:center;justify-content:center;animation:pulse2 .8s infinite alternate">
-      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round">
-        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12
-          19.79 19.79 0 0 1 1.62 3.41 2 2 0 0 1 3.6 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81
-          a2 2 0 0 1-.45 2.11L7.91 8.94a16 16 0 0 0 5.55 5.55l.96-.96a2 2 0 0 1 2.11-.45
-          c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
-      </svg>
-    </div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#ff4444">
-      DROWSINESS ALERT
-    </div>
-    <div style="font-size:14px;color:#8892a0;max-width:280px;line-height:1.6">
-      Eyes closed for 10+ seconds.<br>Calling your emergency contact.
-    </div>
-    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:600;color:#f0f4f8">
-      ${S.emName || 'Emergency Contact'}
-    </div>
-    <div style="font-size:18px;color:#ff8c00;font-weight:600;letter-spacing:1px">${number}</div>
-    <a href="tel:${number}" onclick="document.getElementById('emergencyOverlay').remove()"
-      style="display:block;width:100%;max-width:280px;padding:16px;
-        background:linear-gradient(135deg,#e03030,#e07020);
-        color:#fff;border-radius:12px;font-family:'Rajdhani',sans-serif;
-        font-size:20px;font-weight:700;letter-spacing:1px;text-decoration:none;
-        text-align:center;margin-top:8px">
-      📞 CALL NOW
-    </a>
-    <button onclick="document.getElementById('emergencyOverlay').remove()"
-      style="background:transparent;border:1px solid #2a3040;color:#8892a0;
-        border-radius:10px;padding:10px 24px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">
-      Dismiss
-    </button>
-    <style>@keyframes pulse2{from{box-shadow:0 0 0 0 rgba(224,48,48,0.4)}to{box-shadow:0 0 0 20px rgba(224,48,48,0)}}</style>
-  `;
-  document.body.appendChild(overlay);
+  // Show brief toast notification
+  const toast = document.createElement('div');
+  toast.style.cssText=`
+    position:fixed;top:80px;left:50%;transform:translateX(-50%);
+    background:#e03030;color:#fff;padding:12px 22px;border-radius:10px;
+    font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;
+    z-index:99999;letter-spacing:.5px;white-space:nowrap;
+    box-shadow:0 4px 20px rgba(224,48,48,0.5)`;
+  toast.textContent = `📞 Calling ${S.emName||number}...`;
+  document.body.appendChild(toast);
+  setTimeout(()=>toast.remove(), 4000);
 
-  // Auto-open dialer after 1.5 seconds
-  setTimeout(()=>{ window.location.href = `tel:${number}`; }, 1500);
+  // Auto-call immediately — no tap needed
+  window.location.href = `tel:${number}`;
 }
 
 // ══════════════════════════════════════════
@@ -759,17 +727,23 @@ function onResults(results){
     const closed = now - eyeClosedStart;
 
     if(closed >= S.drowsySecs){
+      state["drowsy_alert"] = true;
       startAlarm();
       document.getElementById('alertBanner').classList.add('on');
       document.getElementById('alertSub').textContent=`Eyes closed ${closed.toFixed(1)}s — stay alert!`;
       document.getElementById('hudAlert').classList.add('on');
-      if(!emergencyCalled){
+      if(!emergencyCalled && S.emCallEnabled && closed >= S.sosSecs){
         emergencyCalled = true;
         alertsToday++;
         safetyScore = Math.max(0, safetyScore-10);
         addLog('DROWSINESS', `Eyes closed ${closed.toFixed(1)}s, EAR=${ear.toFixed(2)}`);
-        if(S.emCallEnabled){
-          triggerEmergencyCall(`Eyes closed for ${closed.toFixed(1)} seconds.`);
+        triggerEmergencyCall(`Eyes closed for ${closed.toFixed(1)} seconds.`);
+      } else if(!emergencyCalled && closed >= S.drowsySecs && !S.emCallEnabled){
+        // log drowsiness even if call disabled
+        if(closed >= S.drowsySecs && alertsToday === 0 || closed - S.drowsySecs < 0.9){
+          alertsToday++;
+          safetyScore = Math.max(0, safetyScore-10);
+          addLog('DROWSINESS', `Eyes closed ${closed.toFixed(1)}s, EAR=${ear.toFixed(2)}`);
         }
       }
     }
@@ -993,6 +967,7 @@ function setSetting(el, id){
   if(id==='drowsyT'){ S.drowsySecs=v; document.getElementById('drowsyD').textContent=v+'s'; }
   if(id==='yawnT'){ S.yawnSecs=v; document.getElementById('yawnD').textContent=v+'s'; }
   if(id==='spdL'){ S.speedLimit=v; document.getElementById('spdLD').textContent=v+' km/h'; }
+  if(id==='sosTimer'){ S.sosSecs=v; document.getElementById('sosTimerD').textContent=v+'s'; }
   saveSettings();
 }
 
@@ -1003,6 +978,7 @@ function saveSettings(){
   S.emCallEnabled = document.getElementById('tEmCall').classList.contains('on');
   S.emName   = document.getElementById('emName').value;
   S.emPhone  = document.getElementById('emPhone').value;
+  S.sosSecs  = parseInt(document.getElementById('sosTimer').value);
   S.camera   = document.getElementById('camSel').value;
   document.getElementById('emNameDisp').textContent  = S.emName  || 'Not set';
   document.getElementById('emPhoneDisp').textContent = S.emPhone || 'Not set';
@@ -1028,8 +1004,10 @@ function loadSettings(){
     if(!S.vibeEnabled)   document.getElementById('tVibe').classList.remove('on');
     if(!S.flashEnabled)  document.getElementById('tFlash').classList.remove('on');
     if(S.emCallEnabled)  document.getElementById('tEmCall').classList.add('on');
-    document.getElementById('emName').value   = S.emName||'';
-    document.getElementById('emPhone').value  = S.emPhone||'';
+    document.getElementById('emName').value    = S.emName||'';
+    document.getElementById('emPhone').value   = S.emPhone||'';
+    document.getElementById('sosTimer').value  = S.sosSecs||10;
+    document.getElementById('sosTimerD').textContent = (S.sosSecs||10)+'s';
     document.getElementById('camSel').value   = S.camera||'user';
     document.getElementById('emNameDisp').textContent  = S.emName||'Not set';
     document.getElementById('emPhoneDisp').textContent = S.emPhone||'Not set';
