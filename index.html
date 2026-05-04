@@ -6,11 +6,11 @@
 <meta name="theme-color" content="#0a0c0f"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
-<meta name="apple-mobile-web-app-title" content="GuardDrive"/>
+<meta name="apple-mobile-web-app-title" content="Auto Vigilance"/>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="icon-192.png"/>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"/>
-<title>GuardDrive</title>
+<title>Auto Vigilance</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
@@ -192,7 +192,7 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
 
   <!-- TOP BAR -->
   <div class="topbar">
-    <div class="logo">Guard<em>Drive</em></div>
+    <div class="logo">Auto <em>Vigilance</em></div>
     <div class="topbar-right">
       <div class="icon-btn" onclick="goPage('logs')">
         <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -322,19 +322,13 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
       </div>
       <div class="card">
         <div class="ctitle">Emergency Contact</div>
-        <div class="ssb" style="margin-bottom:6px">Called via Twilio when eyes closed 10+ seconds</div>
-        <div class="srow"><div><div class="slb">Enable Emergency Call</div></div><div class="tog" id="tEmCall" onclick="this.classList.toggle('on');saveSettings()"></div></div>
-        <div style="margin-top:8px">
+        <div class="ssb" style="margin-bottom:10px">When eyes are closed 10+ seconds, a fullscreen alert appears and your phone dials this number automatically using your own SIM.</div>
+        <div class="srow"><div><div class="slb">Enable Emergency Call</div><div class="ssb">Auto-dial on drowsiness</div></div><div class="tog" id="tEmCall" onclick="this.classList.toggle('on');saveSettings()"></div></div>
+        <div style="margin-top:10px">
           <div class="shdr">Contact Name</div>
-          <input type="text" id="emName" placeholder="e.g. Dad" oninput="saveSettings()"/>
+          <input type="text" id="emName" placeholder="e.g. Dad / Mom" oninput="saveSettings()"/>
           <div class="shdr" style="margin-top:10px">Phone Number</div>
           <input type="tel" id="emPhone" placeholder="+91XXXXXXXXXX" oninput="saveSettings()"/>
-          <div class="shdr" style="margin-top:10px">Twilio Account SID</div>
-          <input type="text" id="twSID" placeholder="ACxxxxxxxxxxxxxxxx" oninput="saveSettings()"/>
-          <div class="shdr" style="margin-top:10px">Twilio Auth Token</div>
-          <input type="text" id="twToken" placeholder="your_auth_token" oninput="saveSettings()"/>
-          <div class="shdr" style="margin-top:10px">Twilio From Number</div>
-          <input type="tel" id="twFrom" placeholder="+1XXXXXXXXXX" oninput="saveSettings()"/>
         </div>
       </div>
       <div class="card">
@@ -360,7 +354,7 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
           </div>
           <div>
             <div class="pn" id="profName">Shriyaansh Shukla</div>
-            <div class="ps" id="profId">Driver ID: GD-2025-0821</div>
+            <div class="ps" id="profId">Driver ID: AV-2025-0821</div>
             <div class="pe" onclick="openEditModal()">✏️ Edit Profile →</div>
           </div>
         </div>
@@ -408,7 +402,7 @@ input[type=text]:focus,input[type=tel]:focus{border-color:var(--orange2)}
         <div class="ctitle">Help & Guide</div>
         <div class="hitem"><div class="hnum">1</div><div><div class="htit">Mount your phone on the dashboard</div><div class="hbod">Use a phone mount so the front camera faces your face directly. Both eyes must be clearly visible. Avoid dark environments or harsh backlighting.</div></div></div>
         <div class="hitem"><div class="hnum">2</div><div><div class="htit">Calibrate EAR for your face</div><div class="hbod">If you get too many false alarms, increase the EAR threshold in Settings. If drowsiness isn't caught, lower it. Default 0.40 suits most faces.</div></div></div>
-        <div class="hitem"><div class="hnum">3</div><div><div class="htit">Emergency calls via Twilio</div><div class="hbod">Sign up free at twilio.com. Enter your Account SID, Auth Token and From Number in Settings. The app will auto-call when eyes close for 10+ seconds.</div></div></div>
+        <div class="hitem"><div class="hnum">3</div><div><div class="htit">Emergency call — no setup needed</div><div class="hbod">Go to Settings → Emergency Contact. Enter a name and phone number and toggle it on. When eyes stay closed for 10+ seconds the app opens your phone's dialer with the number ready — tap Call. Uses your own SIM, completely free.</div></div></div>
         <div class="hitem"><div class="hnum">4</div><div><div class="htit">GPS speed tracking</div><div class="hbod">Allow location permission when prompted. The app reads your real GPS speed. Set your custom speed limit in Settings to log exceeded events.</div></div></div>
         <div class="hitem"><div class="hnum">5</div><div><div class="htit">Install as an app</div><div class="hbod">In Chrome: tap the three-dot menu → "Add to Home Screen". On Safari (iPhone): tap Share → "Add to Home Screen". Works fully offline once installed.</div></div></div>
       </div>
@@ -459,9 +453,6 @@ const S = {
   emCallEnabled:   false,
   emName:          '',
   emPhone:         '',
-  twSID:           '',
-  twToken:         '',
-  twFrom:          '',
   camera:          'user',
 };
 
@@ -503,8 +494,8 @@ let speedAlerted = false;
 // ══════════════════════════════════════════
 //  LOGS (persisted in localStorage)
 // ══════════════════════════════════════════
-let logs = JSON.parse(localStorage.getItem('gd_logs') || '[]');
-function saveLogs(){ try{ localStorage.setItem('gd_logs', JSON.stringify(logs.slice(0,200))); }catch(_){} }
+let logs = JSON.parse(localStorage.getItem('av_logs') || '[]');
+function saveLogs(){ try{ localStorage.setItem('av_logs', JSON.stringify(logs.slice(0,200))); }catch(_){} }
 function addLog(type, details){
   const t = new Date().toLocaleString('en-IN',{hour12:false,hour:'2-digit',minute:'2-digit',day:'2-digit',month:'short'});
   logs.unshift({type, details, time:t});
@@ -551,7 +542,7 @@ function calcMAR(lms){
 }
 
 // ══════════════════════════════════════════
-//  AUDIO ALARM  (Web Audio API — no file needed)
+//  AUDIO ALARM  (loud emergency siren)
 // ══════════════════════════════════════════
 let audioCtx = null;
 let alarmInterval = null;
@@ -562,19 +553,52 @@ function startAlarm(){
   if(!S.alarmEnabled) return;
   try{
     audioCtx = audioCtx || new (window.AudioContext||window.webkitAudioContext)();
-    function beep(){
-      const osc = audioCtx.createOscillator();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+
+    function sirenTone(startTime, freq1, freq2, duration){
+      const osc  = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-      osc.connect(gain); gain.connect(audioCtx.destination);
-      osc.type='square'; osc.frequency.value=880;
-      gain.gain.setValueAtTime(0.6,audioCtx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+0.4);
-      osc.start(); osc.stop(audioCtx.currentTime+0.4);
+      // Distortion for harshness
+      const wave = audioCtx.createWaveShaper();
+      const curve = new Float32Array(256);
+      for(let i=0;i<256;i++){
+        const x = (i*2/256)-1;
+        curve[i] = (Math.PI+400)*x/(Math.PI+400*Math.abs(x));
+      }
+      wave.curve = curve;
+      osc.connect(wave); wave.connect(gain); gain.connect(audioCtx.destination);
+
+      // Sweep freq1 → freq2 → freq1 (siren effect)
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(freq1, startTime);
+      osc.frequency.linearRampToValueAtTime(freq2, startTime + duration/2);
+      osc.frequency.linearRampToValueAtTime(freq1, startTime + duration);
+
+      // Full volume — no fade out
+      gain.gain.setValueAtTime(1.0, startTime);
+      gain.gain.setValueAtTime(1.0, startTime + duration - 0.01);
+      gain.gain.linearRampToValueAtTime(0.0, startTime + duration);
+
+      osc.start(startTime);
+      osc.stop(startTime + duration);
     }
-    beep();
-    alarmInterval = setInterval(beep, 700);
+
+    function playSiren(){
+      const now = audioCtx.currentTime;
+      // Two overlapping sweeps for urgency
+      sirenTone(now,       960, 1400, 0.18);
+      sirenTone(now+0.09,  700, 1100, 0.18);
+      sirenTone(now+0.22,  960, 1400, 0.18);
+      sirenTone(now+0.31,  700, 1100, 0.18);
+    }
+
+    playSiren();
+    alarmInterval = setInterval(playSiren, 500);
   }catch(_){}
-  if(S.vibeEnabled && navigator.vibrate) navigator.vibrate([300,100,300,100,300]);
+
+  // Aggressive vibration pattern
+  if(S.vibeEnabled && navigator.vibrate)
+    navigator.vibrate([200,80,200,80,400,80,200,80,200]);
   if(S.flashEnabled) flashScreen();
 }
 
@@ -598,29 +622,71 @@ function flashScreen(){
 }
 
 // ══════════════════════════════════════════
-//  EMERGENCY CALL (Twilio REST API)
+//  EMERGENCY CALL — Direct phone dialer
+//  Uses tel: protocol → opens your phone's
+//  own dialer with the number pre-filled.
+//  Your phone, your SIM, your number.
+//  No Twilio, no API, no cost.
 // ══════════════════════════════════════════
 function triggerEmergencyCall(reason){
-  if(!S.emCallEnabled||!S.twSID||!S.twToken||!S.twFrom||!S.emPhone){
-    addLog('EMERGENCY_PLACEHOLDER', `Would call ${S.emPhone||'(not set)'}: ${reason}`);
+  if(!S.emCallEnabled || !S.emPhone){
+    addLog('EMERGENCY_SKIPPED', `Call not triggered — no number set`);
     return;
   }
-  const twiml = `<Response><Say>GuardDrive alert. ${reason}</Say></Response>`;
-  const body = new URLSearchParams({
-    To: S.emPhone, From: S.twFrom,
-    Twiml: twiml
-  });
-  fetch(`https://api.twilio.com/2010-04-01/Accounts/${S.twSID}/Calls.json`,{
-    method:'POST',
-    headers:{
-      'Authorization':'Basic '+btoa(S.twSID+':'+S.twToken),
-      'Content-Type':'application/x-www-form-urlencoded'
-    },
-    body
-  })
-  .then(r=>r.json())
-  .then(d=>addLog('EMERGENCY_CALL',`SID=${d.sid||'error'} To=${S.emPhone}`))
-  .catch(e=>addLog('EMERGENCY_CALL_ERROR',e.message));
+
+  const number = S.emPhone.replace(/\s/g,'');
+  addLog('EMERGENCY_CALL', `Calling ${number} — ${reason}`);
+
+  // Show fullscreen alert with call button
+  const overlay = document.createElement('div');
+  overlay.id = 'emergencyOverlay';
+  overlay.style.cssText = `
+    position:fixed;inset:0;z-index:99999;
+    background:rgba(10,12,15,0.97);
+    display:flex;flex-direction:column;
+    align-items:center;justify-content:center;
+    gap:20px;padding:30px;text-align:center;
+  `;
+  overlay.innerHTML = `
+    <div style="width:80px;height:80px;border-radius:50%;background:#e0303022;border:2px solid #e03030;
+      display:flex;align-items:center;justify-content:center;animation:pulse2 .8s infinite alternate">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff4444" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12
+          19.79 19.79 0 0 1 1.62 3.41 2 2 0 0 1 3.6 1.25h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81
+          a2 2 0 0 1-.45 2.11L7.91 8.94a16 16 0 0 0 5.55 5.55l.96-.96a2 2 0 0 1 2.11-.45
+          c.907.339 1.85.573 2.81.7A2 2 0 0 1 21 16.92z"/>
+      </svg>
+    </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;color:#ff4444">
+      DROWSINESS ALERT
+    </div>
+    <div style="font-size:14px;color:#8892a0;max-width:280px;line-height:1.6">
+      Eyes closed for 10+ seconds.<br>Calling your emergency contact.
+    </div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:600;color:#f0f4f8">
+      ${S.emName || 'Emergency Contact'}
+    </div>
+    <div style="font-size:18px;color:#ff8c00;font-weight:600;letter-spacing:1px">${number}</div>
+    <a href="tel:${number}" onclick="document.getElementById('emergencyOverlay').remove()"
+      style="display:block;width:100%;max-width:280px;padding:16px;
+        background:linear-gradient(135deg,#e03030,#e07020);
+        color:#fff;border-radius:12px;font-family:'Rajdhani',sans-serif;
+        font-size:20px;font-weight:700;letter-spacing:1px;text-decoration:none;
+        text-align:center;margin-top:8px">
+      📞 CALL NOW
+    </a>
+    <button onclick="document.getElementById('emergencyOverlay').remove()"
+      style="background:transparent;border:1px solid #2a3040;color:#8892a0;
+        border-radius:10px;padding:10px 24px;font-size:14px;cursor:pointer;font-family:'Inter',sans-serif">
+      Dismiss
+    </button>
+    <style>@keyframes pulse2{from{box-shadow:0 0 0 0 rgba(224,48,48,0.4)}to{box-shadow:0 0 0 20px rgba(224,48,48,0)}}</style>
+  `;
+  document.body.appendChild(overlay);
+
+  // Auto-open dialer after 1.5 seconds
+  setTimeout(()=>{ window.location.href = `tel:${number}`; }, 1500);
 }
 
 // ══════════════════════════════════════════
@@ -937,18 +1003,15 @@ function saveSettings(){
   S.emCallEnabled = document.getElementById('tEmCall').classList.contains('on');
   S.emName   = document.getElementById('emName').value;
   S.emPhone  = document.getElementById('emPhone').value;
-  S.twSID    = document.getElementById('twSID').value;
-  S.twToken  = document.getElementById('twToken').value;
-  S.twFrom   = document.getElementById('twFrom').value;
   S.camera   = document.getElementById('camSel').value;
   document.getElementById('emNameDisp').textContent  = S.emName  || 'Not set';
   document.getElementById('emPhoneDisp').textContent = S.emPhone || 'Not set';
-  try{ localStorage.setItem('gd_settings', JSON.stringify(S)); }catch(_){}
+  try{ localStorage.setItem('av_settings', JSON.stringify(S)); }catch(_){}
 }
 
 function loadSettings(){
   try{
-    const saved = JSON.parse(localStorage.getItem('gd_settings')||'null');
+    const saved = JSON.parse(localStorage.getItem('av_settings')||'null');
     if(!saved) return;
     Object.assign(S, saved);
     document.getElementById('earT').value      = Math.round(S.earThreshold*100);
@@ -967,9 +1030,6 @@ function loadSettings(){
     if(S.emCallEnabled)  document.getElementById('tEmCall').classList.add('on');
     document.getElementById('emName').value   = S.emName||'';
     document.getElementById('emPhone').value  = S.emPhone||'';
-    document.getElementById('twSID').value    = S.twSID||'';
-    document.getElementById('twToken').value  = S.twToken||'';
-    document.getElementById('twFrom').value   = S.twFrom||'';
     document.getElementById('camSel').value   = S.camera||'user';
     document.getElementById('emNameDisp').textContent  = S.emName||'Not set';
     document.getElementById('emPhoneDisp').textContent = S.emPhone||'Not set';
@@ -1073,7 +1133,7 @@ function goPage(id){
 // ══════════════════════════════════════════
 const defaultProfile = {
   name: 'Shriyaansh Shukla',
-  driverId: 'GD-2025-0821',
+  driverId: 'AV-2025-0821',
   carModel: 'Maruti Swift VXI',
   carYear: '2022',
   carReg: 'HP 00 AA 0000',
@@ -1081,11 +1141,11 @@ const defaultProfile = {
   photo: '',
 };
 let profile = Object.assign({}, defaultProfile,
-  JSON.parse(localStorage.getItem('gd_profile') || '{}')
+  JSON.parse(localStorage.getItem('av_profile') || '{}')
 );
 
 function saveProfile(){
-  localStorage.setItem('gd_profile', JSON.stringify(profile));
+  localStorage.setItem('av_profile', JSON.stringify(profile));
 }
 
 function applyProfile(){
@@ -1170,8 +1230,8 @@ function saveEditModal(){
 if('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
-      .then(() => console.log('[GuardDrive] Service worker registered'))
-      .catch(e => console.warn('[GuardDrive] SW error:', e));
+      .then(() => console.log('[Auto Vigilance] Service worker registered'))
+      .catch(e => console.warn('[Auto Vigilance] SW error:', e));
   });
 }
 </script>
@@ -1209,7 +1269,7 @@ if('serviceWorker' in navigator){
 
       <div>
         <div class="shdr">Driver ID</div>
-        <input type="text" id="ep_driverId" placeholder="e.g. GD-2025-0821"
+        <input type="text" id="ep_driverId" placeholder="e.g. AV-2025-0821"
           style="background:var(--bg4);border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:10px 12px;font-size:14px;outline:none;width:100%;font-family:var(--body);margin-top:5px"/>
       </div>
 
